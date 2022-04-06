@@ -1,0 +1,76 @@
+pipeline {
+		
+	agent any
+    stages {
+stage (' Deploy to AKS Cluster'){
+				steps{
+						sh '''
+                        RESOURCE_GROUP="disernscience"
+                        CLUSTERNAME="disernscience"
+
+						#Kubenetes config (for safety, in order to make sure it runs in the selected K8s context)
+						az aks get-credentials --resource-group $RESOURCE_GROUP --name $CLUSTERNAME
+						
+						#If credentials are required for pulling docker image, supply the credentials to AKS by running the following:
+                        kubectl apply -f avatar-admin-services/namespaces/avatar-admin-portal-ns.yml
+                        kubectl apply -f avatar-cluster-storage/admin-storage-class.yaml
+                        kubectl apply -f avatar-admin-services/volumes/admin-pvc.yaml
+                        kubectl apply -f avatar-admin-services/secrets/avatar-admin-portal-secret.yaml
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/config/secret.yml
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/config/avatar-admin-db-configmap.yaml
+                        #kubectl -n avatar-admin-portal create configmap avatar-admin-db --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/config/postgres.conf --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/config/master.conf --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/config/replica.conf --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/config/pg_hba.conf --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/config/create-replica-user.sh
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/avatar-admin-mgmt-db-master.yml
+                        sleep 120
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/service.yml
+                        #kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-admin-mgmt-db/avatar-admin-mgmt-db-replica.yml
+                        
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/config/secret.yml
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/config/avatar-user-mgmt-db-configmap.yaml
+                        #kubectl -n avatar-admin-portal create configmap avatar-user-db --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/config/postgres.conf --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/config/master.conf --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/config/replica.conf --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/config/pg_hba.conf --from-file=avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/config/create-replica-user.sh
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/avatar-user-mgmt-db-master.yml
+                        sleep 120
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/service.yml
+                        
+                        #kubectl apply -f avatar-admin-services/external-services/avatar-admin-dbs/avatar-user-mgmt-db/avatar-user-mgmt-db-replica.yml
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-cache-services-deployment.yaml
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-cache-services-service.yaml
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-iam-services-deployment.yaml
+                        
+                        kubectl apply -f avatar-admin-services/external-services/avatar-admin-iam-services-service.yaml
+						kubectl replace --force -f avatar-admin-services/business-services/avatar-admin-usermgmt-services-deployment.yaml
+                        
+                        kubectl apply -f avatar-admin-services/business-services/avatar-admin-usermgmt-services-service.yaml
+                        kubectl replace --force -f avatar-admin-services/business-services/avatar-questionmgmt-services-deployment.yaml
+                      
+                        kubectl apply -f avatar-admin-services/business-services/avatar-questionmgmt-services-service.yaml
+                        kubectl replace --force -f avatar-admin-services/business-services/avatar-tenantmgmt-services-deployment.yaml
+                        
+                        kubectl apply -f avatar-admin-services/business-services/avatar-tenantmgmt-services-service.yaml
+                        kubectl apply -f avatar-admin-services/infra-services/avatar-admin-api-gateway-pod.yaml
+                        kubectl apply -f avatar-admin-services/infra-services/avatar-admin-api-gateway-service.yaml
+                        kubectl get pods -n avatar-admin-portal
+                        kubectl get pvc -n avatar-admin-portal
+                        kubectl get deployments -n avatar-admin-portal
+                        #kubectl get services -n avatar-admin-portal
+					    #kubectl apply -f avatar-admin-services/avatar-admin-portal-ns.yml
+						#kubectl replace --force -f avatar-admin-services/business-services/avatar-admin-usermgmt-services-pod.yaml
+                        #kubectl apply -f avatar-admin-services/business-services/avatar-admin-usermgmt-services-service.yaml
+                        
+                        #kubectl replace --force -f avatar-admin-services/business-services/avatar-questionmgmt-services-deployment.yaml
+                        #kubectl apply -f avatar-admin-services/business-services/avatar-questionmgmt-services-service.yaml
+                        #kubectl replace --force -f avatar-admin-services/business-services/avatar-tenantmgmt-services-deployment.yaml
+                        #kubectl apply -f avatar-admin-services/business-services/avatar-tenantmgmt-services-service.yaml
+                        #kubectl replace --force -f avatar-admin-services/external-services/avatar-admin-iam-services-deployment.yaml
+                        #kubectl apply -f avatar-admin-services/external-services/avatar-admin-iam-services-service.yaml
+                        #kubectl replace --force -f avatar-admin-services/infra-services/avatar-admin-api-gateway-pod.yaml
+                        #kubectl apply -f avatar-admin-services/infra-services/avatar-admin-api-gateway-service.yaml
+                        #kubectl apply -f avatar-admin-services/external-services/avatar-admin-db-pod.yaml
+                        #kubectl apply -f avatar-admin-services/external-services/avatar-admin-db-service.yaml
+                        #kubectl apply -f avatar-admin-services/external-services/avatar-admin-cache-services-deployment.yaml
+                        #kubectl apply -f avatar-admin-services/external-services/avatar-admin-cache-services-service.yaml
+                        #kubectl get pods -n avatar-admin-portal
+						'''
+					}
+      	}
+	}	
+}
