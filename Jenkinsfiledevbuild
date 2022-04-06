@@ -1,0 +1,25 @@
+pipeline {
+         agent any
+         stages {
+                 stage('Git-checkout') {
+                 steps {
+                     git branch: 'develop',
+                     credentialsId: "",
+                     url: ''
+                 }
+                 }
+                 stage('Build') {
+                 steps {
+                    sh 'mvn clean install -DskipTests -P dockerDev'
+                 }
+                 post {
+                       always {
+                         build 'admin-dev-deploy'
+                         build 'tenant-dev-deploy'
+                         cleanWs()
+                       }
+                       }
+                 }
+                       
+        }
+}        
